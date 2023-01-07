@@ -1,0 +1,18 @@
+name: WorldEditTickSpreader
+version: ${version}
+website: https://github.com/emilyy-dev/wets
+main: ar.emily.wets.bukkit.WESpreadPlugin
+api-version: 1.13
+depend:
+  - WorldEdit
+
+commands:
+  worldedit-tick-spreader:
+    usage: /<command> (<blocks per tick> | sorted | not-sorted)
+    permission: wets
+    aliases:
+      - wets
+
+permissions:
+  wets:
+    default: op

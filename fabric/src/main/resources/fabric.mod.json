@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "worldedit-tick-spreader",
+  "version": "${version}",
+
+  "name": "WorldEdit Tick Spreader",
+  "authors": [
+    "emilyy-dev"
+  ],
+  "contact": {
+    "sources": "https://github.com/emilyy-dev/wets",
+    "issues": "https://github.com/emilyy-dev/wets/issues"
+  },
+
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "ar.emily.wets.fabric.WESpreadMod"
+    ]
+  },
+
+  "depends": {
+    "fabric-permissions-api-v0": "*",
+    "fabricloader": "*",
+    "java": ">=17",
+    "minecraft": "1.19.3",
+    "worldedit": "*"
+  }
+}
