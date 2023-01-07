@@ -4,7 +4,7 @@ Spread WorldEdit operations across multiple ticks.
 
 That's all.
 
-Semi-configurable, single command `/wets` (`/worldedit-tick-spreader`), three possible arguments:
+Semi-configurable, single command `/wets` (`/worldedit-tick-spreader`), one permission (`wets`), two possible arguments:
 * `/wets (sorted | not-sorted)` - whether blocks will be placed in a sorted arrangement or not. Sorted is default.
 * `/wets <blocks-per-tick>` - Changes the amount of blocks that will be placed per tick.
 Negative numbers result in a lot of blocks per tick (9223372036854775807). Default is 1.
