@@ -2,7 +2,7 @@
 
 Spread WorldEdit operations across multiple ticks.
 
-That's all.
+That's all. Download on [modrinth](https://modrinth.com/mod/wets).
 
 Semi-configurable, single command `/wets` (`/worldedit-tick-spreader`), one permission (`wets`), two possible arguments:
 * `/wets (sorted | not-sorted)` - whether blocks will be placed in a sorted arrangement or not. Sorted is default.
