@@ -24,7 +24,9 @@ subprojects {
 
     named<ProcessResources>("processResources") {
       inputs.property("version", this@subprojects.version)
-      expand("version" to this@subprojects.version)
+      filesNotMatching("**/icon.png") {
+        expand("version" to this@subprojects.version)
+      }
     }
 
     withType<Jar> {

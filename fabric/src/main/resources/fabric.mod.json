@@ -3,6 +3,7 @@
   "id": "worldedit-tick-spreader",
   "version": "${version}",
 
+  "icon": "assets/worldedit-tick-spreader/icon.png",
   "name": "WorldEdit Tick Spreader",
   "authors": [
     "emilyy-dev"
