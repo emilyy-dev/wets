@@ -124,6 +124,7 @@ public final class WESpread {
 
     @Override
     public <T extends BlockStateHolder<T>> boolean setBlock(final BlockVector3 position, final T block) {
+      this.buffer.remove(position); // workaround silly WorldEdit bug, see https://github.com/emilyy-dev/wets/issues/1
       this.buffer.put(position, block.toBaseBlock());
       return true;
     }
