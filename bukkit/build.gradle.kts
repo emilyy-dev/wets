@@ -7,14 +7,15 @@ repositories {
 }
 
 dependencies {
-  shadow("io.papermc.paper:paper-api:1.19.3-R0.1-SNAPSHOT")
-  shadow("com.sk89q.worldedit:worldedit-bukkit:7.2.13")
-  implementation(project(":wets-common"))
+  // this is all set up the wrong way around but shadowJar is special
+  implementation("io.papermc.paper:paper-api:1.19.3-R0.1-SNAPSHOT")
+  implementation("com.sk89q.worldedit:worldedit-bukkit:7.2.13")
+  shadow(project(":wets-common")) { isTransitive = false }
 }
 
 tasks {
   shadowJar {
-    dependencies { include(project(":wets-common")) }
+    configurations = listOf(project.configurations["shadow"])
     archiveBaseName.set("WETS")
     archiveClassifier.set("bukkit")
   }

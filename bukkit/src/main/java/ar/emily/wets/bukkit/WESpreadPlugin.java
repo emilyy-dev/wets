@@ -1,5 +1,6 @@
 package ar.emily.wets.bukkit;
 
+import ar.emily.wets.common.AbstractScheduler;
 import ar.emily.wets.common.WESpread;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import org.bukkit.command.Command;
@@ -19,7 +20,7 @@ public final class WESpreadPlugin extends JavaPlugin implements Listener {
 
   private static final List<String> COMPLETIONS = List.of("sorted", "not-sorted");
 
-  private final WESpread plugin = new WESpread(new BukkitSchedulerAdapter(this, getServer().getScheduler()));
+  private final WESpread plugin = new WESpread(new AbstractScheduler(getServer()::getCurrentTick, task -> getServer().getScheduler().runTaskTimer(this, task, 1L, 1L)));
 
   @EventHandler
   public void on(final PlayerQuitEvent event) {
@@ -34,6 +35,11 @@ public final class WESpreadPlugin extends JavaPlugin implements Listener {
   @Override
   public void onEnable() {
     getServer().getPluginManager().registerEvents(this, this);
+  }
+
+  @Override
+  public void onDisable() {
+    this.plugin.flush();
   }
 
   @Override

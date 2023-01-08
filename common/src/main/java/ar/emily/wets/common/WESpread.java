@@ -43,6 +43,7 @@ public final class WESpread {
   private final Scheduler scheduler;
   private final Object2LongMap<UUID> blocksPerTickMap = new Object2LongOpenHashMap<>();
   private final Set<UUID> actorsWhosePlacementIsNotSorted = new HashSet<>();
+  private long defaultBlocksPerTick = 1;
 
   public WESpread(final Scheduler scheduler) {
     this.scheduler = scheduler;
@@ -51,6 +52,13 @@ public final class WESpread {
   public void playerLogout(final UUID id) {
     this.blocksPerTickMap.removeLong(id);
     this.actorsWhosePlacementIsNotSorted.remove(id);
+  }
+
+  public void flush() {
+    this.defaultBlocksPerTick = Long.MAX_VALUE;
+    this.blocksPerTickMap.clear();
+    this.actorsWhosePlacementIsNotSorted.clear();
+    this.scheduler.flush();
   }
 
   public void load() {
@@ -106,7 +114,7 @@ public final class WESpread {
     private SchedulingExtent(final Extent delegate, final UUID playerId) {
       super(delegate);
       this.sorted = !WESpread.this.actorsWhosePlacementIsNotSorted.contains(playerId);
-      this.blocksPerTick = () -> WESpread.this.blocksPerTickMap.getOrDefault(playerId, 1);
+      this.blocksPerTick = () -> WESpread.this.blocksPerTickMap.getOrDefault(playerId, WESpread.this.defaultBlocksPerTick);
     }
 
     @Override
