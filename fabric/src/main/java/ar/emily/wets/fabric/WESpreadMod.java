@@ -36,7 +36,9 @@ public final class WESpreadMod implements ModInitializer {
   public void onInitialize() {
     CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> command(dispatcher));
     ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-      this.plugin = new WESpread(new AbstractScheduler(server::getTickCount, task -> ServerTickEvents.END_SERVER_TICK.register(s -> task.run())));
+      final AbstractScheduler scheduler = new AbstractScheduler(server::getTickCount, task -> ServerTickEvents.END_SERVER_TICK.register(s -> task.run()));
+      scheduler.setup();
+      this.plugin = new WESpread(scheduler);
       this.plugin.load();
     });
     ServerLifecycleEvents.SERVER_STOPPING.register(server -> this.plugin.flush());
