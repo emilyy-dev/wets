@@ -3,7 +3,8 @@ plugins {
 }
 
 repositories {
-  maven("https://oss.sonatype.org/content/repositories/snapshots/")
+  maven("https://oss.sonatype.org/content/repositories/snapshots/").mavenContent { snapshotsOnly() }
+  maven("https://maven.enginehub.org/repo/")
 }
 
 dependencies {
@@ -25,5 +26,13 @@ tasks {
   remapJar {
     archiveBaseName.set("WETS")
     archiveClassifier.set("fabric")
+  }
+
+  assemble {
+    dependsOn(remapJar)
+  }
+
+  runClient {
+    javaLauncher.set(project.javaToolchains.launcherFor(project.java.toolchain))
   }
 }

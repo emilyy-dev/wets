@@ -7,6 +7,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.fabric.FabricAdapter;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.api.ModInitializer;
@@ -30,25 +31,35 @@ public final class WESpreadMod implements ModInitializer {
   private static final List<String> SORTED = List.of("sorted");
   private static final List<String> NOT_SORTED = List.of("not-sorted");
 
+  private static Actor adaptActor(final CommandSourceStack source) throws CommandSyntaxException {
+    return source.isPlayer() ?
+        FabricAdapter.adaptPlayer(source.getPlayerOrException()) :
+        new FabricNonPlayerActor(source);
+  }
+
   private WESpread plugin;
 
   @Override
   public void onInitialize() {
     CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> command(dispatcher));
     ServerLifecycleEvents.SERVER_STARTING.register(server -> {
-      final AbstractScheduler scheduler = new AbstractScheduler(server::getTickCount, task -> ServerTickEvents.END_SERVER_TICK.register(s -> task.run()));
+      final AbstractScheduler scheduler =
+          new AbstractScheduler(
+              server::getTickCount,
+              task -> ServerTickEvents.END_SERVER_TICK.register(s -> task.run())
+          );
       scheduler.setup();
       this.plugin = new WESpread(scheduler);
       this.plugin.load();
     });
-    ServerLifecycleEvents.SERVER_STOPPING.register(server -> this.plugin.flush());
     ServerPlayConnectionEvents.DISCONNECT.register((packetListener, server) ->
         this.plugin.playerLogout(packetListener.getPlayer().getUUID())
     );
   }
 
-  private int executeCommand(final CommandContext<CommandSourceStack> ctx, final List<String> args) throws CommandSyntaxException {
-    this.plugin.command(FabricAdapter.adaptPlayer(ctx.getSource().getPlayerOrException()), args);
+  private int executeCommand(final CommandContext<? extends CommandSourceStack> ctx, final List<String> args)
+      throws CommandSyntaxException {
+    this.plugin.command(adaptActor(ctx.getSource()), args);
     return Command.SINGLE_SUCCESS;
   }
 

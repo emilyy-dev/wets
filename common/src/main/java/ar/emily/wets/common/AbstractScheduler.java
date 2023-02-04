@@ -6,7 +6,7 @@ import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 
-public class AbstractScheduler implements Scheduler {
+public final class AbstractScheduler implements Scheduler {
 
   private final IntSupplier currentTickGetter;
   private final Queue<AbstractTask> pendingTasks = new ArrayDeque<>();
