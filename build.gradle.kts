@@ -6,15 +6,12 @@ plugins {
 subprojects {
   apply(plugin = "java")
 
-  repositories {
-    mavenCentral()
-    maven("https://maven.enginehub.org/repo/")
+  extensions.configure<JavaPluginExtension>("java") {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
   }
 
-  dependencies {
-    "implementation"("com.sk89q.worldedit:worldedit-core:7.2.13")
-    "implementation"("it.unimi.dsi:fastutil:8.5.9")
-    "compileOnly"("org.jetbrains:annotations:23.0.0")
+  repositories {
+    mavenCentral().mavenContent { releasesOnly() }
   }
 
   tasks {

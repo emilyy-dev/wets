@@ -20,7 +20,12 @@ public final class WESpreadPlugin extends JavaPlugin implements Listener {
 
   private static final List<String> COMPLETIONS = List.of("sorted", "not-sorted");
 
-  private final WESpread plugin = new WESpread(new AbstractScheduler(getServer()::getCurrentTick, task -> getServer().getScheduler().runTaskTimer(this, task, 1L, 1L)));
+  private final AbstractScheduler scheduler =
+      new AbstractScheduler(
+          getServer()::getCurrentTick,
+          task -> getServer().getScheduler().runTaskTimer(this, task, 1L, 1L)
+      );
+  private final WESpread plugin = new WESpread(this.scheduler);
 
   @EventHandler
   public void on(final PlayerQuitEvent event) {
@@ -34,12 +39,8 @@ public final class WESpreadPlugin extends JavaPlugin implements Listener {
 
   @Override
   public void onEnable() {
+    this.scheduler.setup();
     getServer().getPluginManager().registerEvents(this, this);
-  }
-
-  @Override
-  public void onDisable() {
-    this.plugin.flush();
   }
 
   @Override

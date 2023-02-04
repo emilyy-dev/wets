@@ -4,6 +4,7 @@ plugins {
 
 repositories {
   maven("https://repo.papermc.io/repository/maven-public/")
+  maven("https://maven.enginehub.org/repo/")
 }
 
 dependencies {
@@ -20,5 +21,7 @@ tasks {
     archiveClassifier.set("bukkit")
   }
 
-  build { dependsOn(shadowJar) }
+  assemble {
+    dependsOn(shadowJar)
+  }
 }

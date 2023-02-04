@@ -6,15 +6,20 @@ import java.util.Queue;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 
-public class AbstractScheduler implements Scheduler {
+public final class AbstractScheduler implements Scheduler {
 
   private final IntSupplier currentTickGetter;
   private final Queue<AbstractTask> pendingTasks = new ArrayDeque<>();
   private final Queue<AbstractTask> tasks = new ArrayDeque<>();
+  private final Consumer<Runnable> underlyingScheduler;
 
   public AbstractScheduler(final IntSupplier currentTickGetter, final Consumer<Runnable> underlyingScheduler) {
     this.currentTickGetter = currentTickGetter;
-    underlyingScheduler.accept(() -> {
+    this.underlyingScheduler = underlyingScheduler;
+  }
+
+  public void setup() {
+    this.underlyingScheduler.accept(() -> {
       processPendingTasks();
       processTasks();
     });

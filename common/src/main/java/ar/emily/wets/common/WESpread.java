@@ -3,15 +3,17 @@ package ar.emily.wets.common;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
-import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.event.extent.EditSessionEvent;
+import com.sk89q.worldedit.event.platform.PlatformUnreadyEvent;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extent.AbstractBufferingExtent;
 import com.sk89q.worldedit.extent.Extent;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.RunContext;
 import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.util.Identifiable;
 import com.sk89q.worldedit.util.collection.BlockMap;
+import com.sk89q.worldedit.util.eventbus.EventHandler;
 import com.sk89q.worldedit.util.eventbus.Subscribe;
 import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
@@ -22,10 +24,12 @@ import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.Nullable;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.LongSupplier;
@@ -33,12 +37,16 @@ import java.util.stream.Stream;
 
 public final class WESpread {
 
-  private static final Component PLAYERS_ONLY = TextComponent.of("This command can only be ran by players", TextColor.RED);
+  public static final UUID NON_IDENTIFIABLE_ACTOR_ID =
+      V5UUID.create(WESpread.class.descriptorString().getBytes(StandardCharsets.UTF_8));
+
+  // @formatter:off
   private static final Component INVALID_ARGUMENT = TextComponent.of("Blocks per tick must be a valid positive number", TextColor.RED);
   private static final Component COMMAND_USAGE = TextComponent.of("Usage: /wets (<blocks per tick> | sorted | not-sorted)");
   private static final Component COMMAND_SORTED = TextComponent.of("Block placement of new operations will now be sorted");
   private static final Component COMMAND_NOT_SORTED = TextComponent.of("Block placement of new operations will now be unsorted");
   private static final Component COMMAND_BPT_UPDATED = TextComponent.of("Blocks per tick placement updated");
+  // @formatter:on
 
   private final Scheduler scheduler;
   private final Object2LongMap<UUID> blocksPerTickMap = new Object2LongOpenHashMap<>();
@@ -54,23 +62,30 @@ public final class WESpread {
     this.actorsWhosePlacementIsNotSorted.remove(id);
   }
 
-  public void flush() {
+  public void load() {
+    WorldEdit.getInstance().getEventBus().register(this);
+  }
+
+  // we really really really want to flush the queue before worldedit itself unloads
+  @Subscribe(priority = EventHandler.Priority.VERY_EARLY)
+  public void on(final PlatformUnreadyEvent event) {
+    WorldEdit.getInstance().getEventBus().unregister(this);
     this.defaultBlocksPerTick = Long.MAX_VALUE;
     this.blocksPerTickMap.clear();
     this.actorsWhosePlacementIsNotSorted.clear();
     this.scheduler.flush();
   }
 
-  public void load() {
-    WorldEdit.getInstance().getEventBus().register(new Object() {
-      @Subscribe
-      public void on(final EditSessionEvent event) {
-        final @Nullable Actor actor = event.getActor();
-        if (event.getStage() == EditSession.Stage.BEFORE_CHANGE && actor != null) {
-          event.setExtent(new SchedulingExtent(event.getExtent(), actor.getUniqueId()));
-        }
-      }
-    });
+  @Subscribe
+  public void on(final EditSessionEvent event) {
+    if (event.getStage() == EditSession.Stage.BEFORE_CHANGE) {
+      final UUID actorId =
+          Optional.ofNullable(event.getActor())
+              .map(Identifiable::getUniqueId)
+              // use a set ID for non-identifiable actors, such as console or potentially API users
+              .orElse(NON_IDENTIFIABLE_ACTOR_ID);
+      event.setExtent(new SchedulingExtent(event.getExtent(), actorId));
+    }
   }
 
   public void command(final Actor source, final List<String> args) {
@@ -78,18 +93,15 @@ public final class WESpread {
       source.print(COMMAND_USAGE);
       return;
     }
-    if (!(source instanceof Player player)) {
-      source.print(PLAYERS_ONLY);
-      return;
-    }
 
+    final UUID id = source.isPlayer() ? source.getUniqueId() : NON_IDENTIFIABLE_ACTOR_ID;
     final String arg = args.iterator().next();
     if ("sorted".equals(arg)) {
-      this.actorsWhosePlacementIsNotSorted.remove(player.getUniqueId());
+      this.actorsWhosePlacementIsNotSorted.remove(id);
       source.print(COMMAND_SORTED);
       return;
     } else if ("not-sorted".equals(arg)) {
-      this.actorsWhosePlacementIsNotSorted.add(player.getUniqueId());
+      this.actorsWhosePlacementIsNotSorted.add(id);
       source.print(COMMAND_NOT_SORTED);
       return;
     }
@@ -97,7 +109,7 @@ public final class WESpread {
     try {
       long blocksPerTick = Long.parseLong(arg);
       if (blocksPerTick < 0) { blocksPerTick = Long.MAX_VALUE; }
-      this.blocksPerTickMap.put(player.getUniqueId(), blocksPerTick);
+      this.blocksPerTickMap.put(id, blocksPerTick);
       source.print(COMMAND_BPT_UPDATED);
     } catch (final NumberFormatException exception) {
       source.print(INVALID_ARGUMENT);
@@ -111,10 +123,10 @@ public final class WESpread {
     private final LongSupplier blocksPerTick;
     private final boolean sorted;
 
-    private SchedulingExtent(final Extent delegate, final UUID playerId) {
+    private SchedulingExtent(final Extent delegate, final UUID actor) {
       super(delegate);
-      this.sorted = !WESpread.this.actorsWhosePlacementIsNotSorted.contains(playerId);
-      this.blocksPerTick = () -> WESpread.this.blocksPerTickMap.getOrDefault(playerId, WESpread.this.defaultBlocksPerTick);
+      this.sorted = !WESpread.this.actorsWhosePlacementIsNotSorted.contains(actor);
+      this.blocksPerTick = () -> WESpread.this.blocksPerTickMap.getOrDefault(actor, WESpread.this.defaultBlocksPerTick);
     }
 
     @Override
@@ -143,8 +155,7 @@ public final class WESpread {
 
         @Override
         public Operation resume(final RunContext run) {
-          //noinspection PointlessBooleanExpression
-          if (this.started == false && it.hasNext()) {
+          if (!this.started && it.hasNext()) {
             this.started = true;
             WESpread.this.scheduler.runPeriodically(this::putBlock, 1L, 1L);
           }
@@ -159,7 +170,7 @@ public final class WESpread {
               setDelegateBlock(entry.getKey(), entry.getValue());
             }
           } catch (final WorldEditException exception) {
-            throw new RuntimeException(exception.getMessage(), exception);
+            throw new RuntimeException(exception);
           } finally {
             if (!it.hasNext()) { task.cancel(); }
           }
