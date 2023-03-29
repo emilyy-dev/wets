@@ -65,15 +65,16 @@ public final class WESpreadMod implements ModInitializer {
 
   private void command(final CommandDispatcher<CommandSourceStack> dispatcher) {
     final Predicate<CommandSourceStack> permissionRequirement = Permissions.require("wets", LEVEL_GAMEMASTERS);
-    final LiteralCommandNode<CommandSourceStack> wetsCommand = dispatcher.register(
-        literal("worldedit-tick-spreader")
-            .requires(permissionRequirement)
-            .then(literal("sorted").executes(ctx -> executeCommand(ctx, SORTED)))
-            .then(literal("not-sorted").executes(ctx -> executeCommand(ctx, NOT_SORTED)))
-            .then(argument("blocks-per-tick", longArg()).executes(ctx ->
-                executeCommand(ctx, List.of(String.valueOf(getLong(ctx, "blocks-per-tick"))))
-            ))
-    );
+    final LiteralCommandNode<CommandSourceStack> wetsCommand =
+        dispatcher.register(
+            literal("worldedit-tick-spreader")
+                .requires(permissionRequirement)
+                .then(literal("sorted").executes(ctx -> executeCommand(ctx, SORTED)))
+                .then(literal("not-sorted").executes(ctx -> executeCommand(ctx, NOT_SORTED)))
+                .then(argument("blocks-per-tick", longArg()).executes(ctx ->
+                    executeCommand(ctx, List.of(String.valueOf(getLong(ctx, "blocks-per-tick"))))
+                ))
+        );
 
     dispatcher.register(literal("wets").requires(permissionRequirement).redirect(wetsCommand));
   }

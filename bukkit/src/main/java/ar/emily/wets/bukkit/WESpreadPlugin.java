@@ -20,6 +20,7 @@ public final class WESpreadPlugin extends JavaPlugin implements Listener {
 
   private static final List<String> COMPLETIONS = List.of("sorted", "not-sorted");
 
+  @SuppressWarnings("ThisEscapedInObjectConstruction")
   private final AbstractScheduler scheduler =
       new AbstractScheduler(
           getServer()::getCurrentTick,
