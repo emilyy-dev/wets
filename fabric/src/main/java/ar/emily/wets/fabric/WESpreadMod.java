@@ -46,7 +46,8 @@ public final class WESpreadMod implements ModInitializer {
       final AbstractScheduler scheduler =
           new AbstractScheduler(
               server::getTickCount,
-              task -> ServerTickEvents.END_SERVER_TICK.register(s -> task.run())
+              task -> ServerTickEvents.END_SERVER_TICK.register(s -> task.run()),
+              (pos, task) -> task.run() // already on server tick
           );
       scheduler.setup();
       this.plugin = new WESpread(scheduler);

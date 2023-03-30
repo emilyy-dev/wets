@@ -3,6 +3,7 @@ version: ${version}
 website: https://github.com/emilyy-dev/wets
 main: ar.emily.wets.bukkit.WESpreadPlugin
 api-version: 1.13
+folia-supported: true
 depend:
   - WorldEdit
 
