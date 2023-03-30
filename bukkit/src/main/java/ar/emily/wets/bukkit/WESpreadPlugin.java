@@ -25,8 +25,8 @@ public final class WESpreadPlugin extends JavaPlugin implements Listener {
   private final AbstractScheduler scheduler =
       new AbstractScheduler(
           () -> this.globalTick,
-          FoliaSchedulerAdapter.scheduleGlobal(this, 1L, 1L),
-          (pos, task) -> FoliaSchedulerAdapter.runAt(this, BukkitAdapter.adapt(pos), task)
+          SchedulerAdapter.scheduleGlobal(this, 1L, 1L),
+          (pos, task) -> SchedulerAdapter.runAt(this, BukkitAdapter.adapt(pos), task)
       );
   private final WESpread plugin = new WESpread(this.scheduler);
 
@@ -43,7 +43,7 @@ public final class WESpreadPlugin extends JavaPlugin implements Listener {
   @Override
   public void onEnable() {
     this.scheduler.setup();
-    FoliaSchedulerAdapter.scheduleGlobal(this, 0L, 1L).accept(() -> this.globalTick += 1);
+    SchedulerAdapter.scheduleGlobal(this, 0L, 1L).accept(() -> this.globalTick += 1);
     getServer().getPluginManager().registerEvents(this, this);
   }
 
