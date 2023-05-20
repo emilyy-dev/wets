@@ -1,11 +1,8 @@
 package ar.emily.wets.common;
 
-import com.sk89q.worldedit.util.Location;
-
 import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.Queue;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 
@@ -14,21 +11,15 @@ public final class AbstractScheduler implements Scheduler {
   private final IntSupplier currentTickGetter;
   private final Queue<AbstractTask> pendingTasks = new ArrayDeque<>();
   private final Queue<AbstractTask> tasks = new ArrayDeque<>();
-  private final Consumer<Runnable> globalScheduler;
-  private final BiConsumer<? super Location, ? super Runnable> regionScheduler;
+  private final Consumer<Runnable> underlyingScheduler;
 
-  public AbstractScheduler(
-      final IntSupplier currentTickGetter,
-      final Consumer<Runnable> globalScheduler,
-      final BiConsumer<? super Location, ? super Runnable> regionScheduler
-  ) {
+  public AbstractScheduler(final IntSupplier currentTickGetter, final Consumer<Runnable> underlyingScheduler) {
     this.currentTickGetter = currentTickGetter;
-    this.globalScheduler = globalScheduler;
-    this.regionScheduler = regionScheduler;
+    this.underlyingScheduler = underlyingScheduler;
   }
 
   public void setup() {
-    this.globalScheduler.accept(() -> {
+    this.underlyingScheduler.accept(() -> {
       processPendingTasks();
       processTasks();
     });
@@ -37,11 +28,6 @@ public final class AbstractScheduler implements Scheduler {
   @Override
   public void runPeriodically(final Consumer<Task> action, final long initialDelay, final long period) {
     this.pendingTasks.add(new AbstractTask(action, this.currentTickGetter.getAsInt(), initialDelay, period));
-  }
-
-  @Override
-  public void runAt(final Location pos, final Runnable action) {
-    this.regionScheduler.accept(pos, action);
   }
 
   public void flush() {

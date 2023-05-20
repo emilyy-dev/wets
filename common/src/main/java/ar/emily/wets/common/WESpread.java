@@ -12,7 +12,6 @@ import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.RunContext;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.util.Identifiable;
-import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.util.collection.BlockMap;
 import com.sk89q.worldedit.util.eventbus.EventHandler;
 import com.sk89q.worldedit.util.eventbus.Subscribe;
@@ -20,18 +19,18 @@ import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
@@ -39,8 +38,6 @@ public final class WESpread {
 
   public static final UUID NON_PLAYER_ACTOR_ID =
       V5UUID.create(WESpread.class.descriptorString().getBytes(StandardCharsets.UTF_8));
-  private static final AtomicLongFieldUpdater<WESpread> DEFAULT_BLOCKS_PER_TICK =
-      AtomicLongFieldUpdater.newUpdater(WESpread.class, "defaultBlocksPerTick");
 
   // @formatter:off
   private static final Component INVALID_ARGUMENT = TextComponent.of("Blocks per tick must be a valid positive number");
@@ -51,17 +48,16 @@ public final class WESpread {
   // @formatter:on
 
   private final Scheduler scheduler;
-  // Folia note: none of the ops on these collections are critical enough to be atomic
-  private final ConcurrentMap<UUID, Long> blocksPerTickMap = new ConcurrentHashMap<>();
-  private final Set<UUID> actorsWhosePlacementIsNotSorted = ConcurrentHashMap.newKeySet();
-  private volatile long defaultBlocksPerTick = 1;
+  private final Object2LongMap<UUID> blocksPerTickMap = new Object2LongOpenHashMap<>();
+  private final Set<UUID> actorsWhosePlacementIsNotSorted = new HashSet<>();
+  private long defaultBlocksPerTick = 1;
 
   public WESpread(final Scheduler scheduler) {
     this.scheduler = scheduler;
   }
 
   public void playerLogout(final UUID id) {
-    this.blocksPerTickMap.remove(id);
+    this.blocksPerTickMap.removeLong(id);
     this.actorsWhosePlacementIsNotSorted.remove(id);
   }
 
@@ -73,7 +69,7 @@ public final class WESpread {
   @Subscribe(priority = EventHandler.Priority.VERY_EARLY)
   public void on(final PlatformUnreadyEvent event) {
     WorldEdit.getInstance().getEventBus().unregister(this);
-    DEFAULT_BLOCKS_PER_TICK.set(this, Long.MAX_VALUE);
+    this.defaultBlocksPerTick = Long.MAX_VALUE;
     this.blocksPerTickMap.clear();
     this.actorsWhosePlacementIsNotSorted.clear();
     this.scheduler.flush();
@@ -130,8 +126,7 @@ public final class WESpread {
     private SchedulingExtent(final Extent delegate, final UUID actor) {
       super(delegate);
       this.sorted = !WESpread.this.actorsWhosePlacementIsNotSorted.contains(actor);
-      this.blocksPerTick =
-          () -> WESpread.this.blocksPerTickMap.getOrDefault(actor, DEFAULT_BLOCKS_PER_TICK.get(WESpread.this));
+      this.blocksPerTick = () -> WESpread.this.blocksPerTickMap.getOrDefault(actor, WESpread.this.defaultBlocksPerTick);
     }
 
     @Override
@@ -172,17 +167,10 @@ public final class WESpread {
           try {
             for (long i = 0; it.hasNext() && i < SchedulingExtent.this.blocksPerTick.getAsLong(); ++i) {
               final var entry = it.next();
-              WESpread.this.scheduler.runAt(
-                  new Location(getExtent(), entry.getKey().toVector3()),
-                  () -> {
-                    try {
-                      setDelegateBlock(entry.getKey(), entry.getValue());
-                    } catch (final WorldEditException ex) {
-                      throw new RuntimeException(ex);
-                    }
-                  }
-              );
+              setDelegateBlock(entry.getKey(), entry.getValue());
             }
+          } catch (final WorldEditException exception) {
+            throw new RuntimeException(exception);
           } finally {
             if (!it.hasNext()) { task.cancel(); }
           }

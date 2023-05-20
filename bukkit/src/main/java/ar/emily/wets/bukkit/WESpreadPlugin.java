@@ -20,13 +20,11 @@ public final class WESpreadPlugin extends JavaPlugin implements Listener {
 
   private static final List<String> COMPLETIONS = List.of("sorted", "not-sorted");
 
-  private int globalTick = 0;
   @SuppressWarnings("ThisEscapedInObjectConstruction")
   private final AbstractScheduler scheduler =
       new AbstractScheduler(
-          () -> this.globalTick,
-          SchedulerAdapter.scheduleGlobal(this, 1L, 1L),
-          (pos, task) -> SchedulerAdapter.runAt(this, BukkitAdapter.adapt(pos), task)
+          getServer()::getCurrentTick,
+          task -> getServer().getScheduler().runTaskTimer(this, task, 1L, 1L)
       );
   private final WESpread plugin = new WESpread(this.scheduler);
 
@@ -43,7 +41,6 @@ public final class WESpreadPlugin extends JavaPlugin implements Listener {
   @Override
   public void onEnable() {
     this.scheduler.setup();
-    SchedulerAdapter.scheduleGlobal(this, 0L, 1L).accept(() -> this.globalTick += 1);
     getServer().getPluginManager().registerEvents(this, this);
   }
 
