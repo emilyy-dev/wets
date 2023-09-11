@@ -13,6 +13,7 @@ dependencies {
   modImplementation("net.fabricmc:fabric-loader:0.14.19")
   setOf(
     "fabric-command-api-v2",
+    "fabric-networking-api-v1",
     "fabric-lifecycle-events-v1"
   )
     .forEach { modImplementation(fabricApi.module(it, "0.81.1+1.19.4")) }

@@ -48,9 +48,9 @@ public final class WESpreadMod implements ModInitializer {
               server::getTickCount,
               task -> ServerTickEvents.END_SERVER_TICK.register(s -> task.run())
           );
-      scheduler.setup();
       this.plugin = new WESpread(scheduler);
       this.plugin.load();
+      scheduler.setup();
     });
     ServerPlayConnectionEvents.DISCONNECT.register((packetListener, server) ->
         this.plugin.playerLogout(packetListener.getPlayer().getUUID())

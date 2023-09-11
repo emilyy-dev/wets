@@ -23,9 +23,10 @@
 
   "depends": {
     "fabric-permissions-api-v0": "*",
+    "fabric": "*",
     "fabricloader": "*",
     "java": ">=17",
-    "minecraft": "1.19.4",
-    "worldedit": "*"
+    "minecraft": ">=1.19.1",
+    "worldedit": ">=7.2.1"
   }
 }
