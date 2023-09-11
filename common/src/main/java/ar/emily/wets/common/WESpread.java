@@ -17,7 +17,6 @@ import com.sk89q.worldedit.util.eventbus.EventHandler;
 import com.sk89q.worldedit.util.eventbus.Subscribe;
 import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
-import com.sk89q.worldedit.util.formatting.text.format.TextColor;
 import com.sk89q.worldedit.world.block.BaseBlock;
 import com.sk89q.worldedit.world.block.BlockStateHolder;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
@@ -37,11 +36,11 @@ import java.util.stream.Stream;
 
 public final class WESpread {
 
-  public static final UUID NON_IDENTIFIABLE_ACTOR_ID =
+  public static final UUID NON_PLAYER_ACTOR_ID =
       V5UUID.create(WESpread.class.descriptorString().getBytes(StandardCharsets.UTF_8));
 
   // @formatter:off
-  private static final Component INVALID_ARGUMENT = TextComponent.of("Blocks per tick must be a valid positive number", TextColor.RED);
+  private static final Component INVALID_ARGUMENT = TextComponent.of("Blocks per tick must be a valid positive number");
   private static final Component COMMAND_USAGE = TextComponent.of("Usage: /wets (<blocks per tick> | sorted | not-sorted)");
   private static final Component COMMAND_SORTED = TextComponent.of("Block placement of new operations will now be sorted");
   private static final Component COMMAND_NOT_SORTED = TextComponent.of("Block placement of new operations will now be unsorted");
@@ -81,9 +80,10 @@ public final class WESpread {
     if (event.getStage() == EditSession.Stage.BEFORE_CHANGE) {
       final UUID actorId =
           Optional.ofNullable(event.getActor())
+              // use a set ID for non-player actors, such as console or potentially API users
+              .filter(Actor::isPlayer)
               .map(Identifiable::getUniqueId)
-              // use a set ID for non-identifiable actors, such as console or potentially API users
-              .orElse(NON_IDENTIFIABLE_ACTOR_ID);
+              .orElse(NON_PLAYER_ACTOR_ID);
       event.setExtent(new SchedulingExtent(event.getExtent(), actorId));
     }
   }
@@ -94,7 +94,7 @@ public final class WESpread {
       return;
     }
 
-    final UUID id = source.isPlayer() ? source.getUniqueId() : NON_IDENTIFIABLE_ACTOR_ID;
+    final UUID id = source.isPlayer() ? source.getUniqueId() : NON_PLAYER_ACTOR_ID;
     final String arg = args.iterator().next();
     if ("sorted".equals(arg)) {
       this.actorsWhosePlacementIsNotSorted.remove(id);
@@ -112,7 +112,7 @@ public final class WESpread {
       this.blocksPerTickMap.put(id, blocksPerTick);
       source.print(COMMAND_BPT_UPDATED);
     } catch (final NumberFormatException exception) {
-      source.print(INVALID_ARGUMENT);
+      source.printError(INVALID_ARGUMENT);
       source.print(COMMAND_USAGE);
     }
   }

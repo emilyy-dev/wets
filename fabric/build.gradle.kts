@@ -8,16 +8,17 @@ repositories {
 }
 
 dependencies {
-  minecraft("com.mojang:minecraft:1.19.3")
+  minecraft("com.mojang:minecraft:1.19.4")
   mappings(loom.officialMojangMappings())
-  modImplementation("net.fabricmc:fabric-loader:0.14.11")
+  modImplementation("net.fabricmc:fabric-loader:0.14.19")
   setOf(
     "fabric-command-api-v2",
+    "fabric-networking-api-v1",
     "fabric-lifecycle-events-v1"
   )
-    .forEach { modImplementation(fabricApi.module(it, "0.72.0+1.19.3")) }
+    .forEach { modImplementation(fabricApi.module(it, "0.81.1+1.19.4")) }
 
-  modImplementation("com.sk89q.worldedit:worldedit-fabric-mc1.19.3:7.2.13")
+  modImplementation("com.sk89q.worldedit:worldedit-fabric-mc1.19.4:7.2.14")
   modImplementation("me.lucko:fabric-permissions-api:0.2-SNAPSHOT") { include(this) }
   implementation(project(":wets-common")) { include(this) }
 }

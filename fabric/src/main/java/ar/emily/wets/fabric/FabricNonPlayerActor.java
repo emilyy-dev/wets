@@ -7,6 +7,7 @@ import com.sk89q.worldedit.session.SessionKey;
 import com.sk89q.worldedit.util.formatting.WorldEditText;
 import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.serializer.gson.GsonComponentSerializer;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +27,7 @@ final class FabricNonPlayerActor extends AbstractNonPlayerActor {
 
   @Override
   public UUID getUniqueId() {
-    return WESpread.NON_IDENTIFIABLE_ACTOR_ID;
+    return WESpread.NON_PLAYER_ACTOR_ID;
   }
 
   @Override
@@ -119,6 +120,6 @@ final class FabricNonPlayerActor extends AbstractNonPlayerActor {
 
   @Override
   public boolean hasPermission(final String permission) {
-    return true;
+    return Permissions.check(this.source, permission);
   }
 }
